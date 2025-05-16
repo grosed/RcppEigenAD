@@ -277,6 +277,11 @@ private:
 	static local::ADTape<Base>*         tape_manage(tape_manage_job job);
 	inline static local::ADTape<Base>*  tape_ptr(void);
 	inline static local::ADTape<Base>*  tape_ptr(tape_id_t tape_id);
+
+public:
+  operator double() const {return value_;}
+  operator float() const {return value_;} 
+  
 };
 // ---------------------------------------------------------------------------
 
