@@ -280,7 +280,7 @@ private:
 
 public:
   operator double() const {return value_;}
-  operator float() const {return value_;} 
+  // operator float() const {return value_;} 
   
 };
 // ---------------------------------------------------------------------------
