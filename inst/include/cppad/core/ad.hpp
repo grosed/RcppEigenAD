@@ -297,7 +297,7 @@ public:
 // adding numeric_limits stuff
 
 
-namespace numext {
+namespace std {
   template<> class numeric_limits<CppAD::AD<double> > {
     public:
     
