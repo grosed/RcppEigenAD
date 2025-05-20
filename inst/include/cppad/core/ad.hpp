@@ -293,4 +293,19 @@ public:
 // operations that expect the AD template class to be defined
 
 
+
+// adding numeric_limits stuff
+
+
+namespace std {
+  template<> class numeric_limits<CppAD::AD<double> > {
+    public:
+    
+    static CppAD::AD<double> infinity() {return CppAD::AD<double>(std::numeric_limits<double>::infinity());};
+       // One can implement other methods if needed
+    };
+}
+
+
+
 # endif
