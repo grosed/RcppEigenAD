@@ -303,6 +303,11 @@ namespace std {
     
     static CppAD::AD<double> infinity() {return CppAD::AD<double>(std::numeric_limits<double>::infinity());};
        // One can implement other methods if needed
+
+
+    static CppAD::AD<double> min() {return CppAD::AD<double>(std::numeric_limits<double>::min());};
+       // One can implement other methods if needed
+    
     };
 }
 
