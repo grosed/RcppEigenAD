@@ -1,17 +1,10 @@
 # ifndef CPPAD_LOCAL_AD_TAPE_HPP
 # define CPPAD_LOCAL_AD_TAPE_HPP
-
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-17 Bradley M. Bell
-
-CppAD is distributed under multiple licenses. This distribution is under
-the terms of the
-                    GNU General Public License Version 3.
-
-A copy of this license is included in the COPYING file of this distribution.
-Please visit http://www.coin-or.org/CppAD/ for information on other licenses.
--------------------------------------------------------------------------- */
-# include <cppad/core/define.hpp>
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-22 Bradley M. Bell
+// ----------------------------------------------------------------------------
+# include <cppad/local/define.hpp>
 
 namespace CppAD { namespace local { // BEGIN_CPPAD_LOCAL__NAMESPACE
 
@@ -24,116 +17,126 @@ An <tt>AD<Base></tt> object is used to recording <tt>AD<Base></tt> operations.
 
 template <class Base>
 class ADTape {
-	// Friends =============================================================
+   // Friends =============================================================
 
-	// classes -------------------------------------------------------------
-	friend class AD<Base>;
-	friend class ADFun<Base>;
-	friend class atomic_base<Base>;
-	friend class discrete<Base>;
-	friend class VecAD<Base>;
-	friend class VecAD_reference<Base>;
+   // classes -------------------------------------------------------------
+   friend class AD<Base>;
+   friend class ADFun<Base>;
+   friend class atomic_base<Base>;
+   friend class atomic_three<Base>;
+   friend class atomic_four<Base>;
+   friend class discrete<Base>;
+   friend class VecAD<Base>;
+   friend class VecAD_reference<Base>;
 
-	// functions -----------------------------------------------------------
-	// PrintFor
-	friend void CppAD::PrintFor <Base> (
-		const AD<Base>&    flag   ,
-		const char*        before ,
-		const AD<Base>&    var    ,
-		const char*        after
-	);
-	// CondExpOp
-	friend AD<Base> CppAD::CondExpOp <Base> (
-		enum CompareOp  cop          ,
-		const AD<Base> &left         ,
-		const AD<Base> &right        ,
-		const AD<Base> &trueCase     ,
-		const AD<Base> &falseCase
-	);
-	// pow
-	friend AD<Base> CppAD::pow <Base>
-		(const AD<Base> &x, const AD<Base> &y);
-	// azmul
-	friend AD<Base> CppAD::azmul <Base>
-		(const AD<Base> &x, const AD<Base> &y);
-	// Parameter
-	friend bool CppAD::Parameter     <Base>
-		(const AD<Base> &u);
-	// Variable
-	friend bool CppAD::Variable      <Base>
-		(const AD<Base> &u);
-	// operators -----------------------------------------------------------
-	// arithematic binary operators
-	friend AD<Base> CppAD::operator + <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend AD<Base> CppAD::operator - <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend AD<Base> CppAD::operator * <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend AD<Base> CppAD::operator / <Base>
-		(const AD<Base> &left, const AD<Base> &right);
+   // functions -----------------------------------------------------------
+   // PrintFor
+   friend void CppAD::PrintFor <Base> (
+      const AD<Base>&    flag   ,
+      const char*        before ,
+      const AD<Base>&    var    ,
+      const char*        after
+   );
+   // CondExpOp
+   friend AD<Base> CppAD::CondExpOp <Base> (
+      enum CompareOp  cop          ,
+      const AD<Base> &left         ,
+      const AD<Base> &right        ,
+      const AD<Base> &trueCase     ,
+      const AD<Base> &falseCase
+   );
+   // pow
+   friend AD<Base> CppAD::pow <Base>
+      (const AD<Base> &x, const AD<Base> &y);
+   // azmul
+   friend AD<Base> CppAD::azmul <Base>
+      (const AD<Base> &x, const AD<Base> &y);
+   // Parameter
+   friend bool CppAD::Parameter     <Base>
+      (const AD<Base> &u);
+   // Variable
+   friend bool CppAD::Variable      <Base>
+      (const AD<Base> &u);
+   // operators -----------------------------------------------------------
+   // arithematic binary operators
+# if _MSC_VER && !defined(__clang__)
+   // see https://stackoverflow.com/questions/63288453
+   template <class Type> friend AD<Type> CppAD::operator * <Type>
+      (const AD<Type> &left, const AD<Type> &right);
+# else
+   friend AD<Base> CppAD::operator * <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+# endif
+   friend AD<Base> CppAD::operator + <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   friend AD<Base> CppAD::operator - <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   friend AD<Base> CppAD::operator / <Base>
+      (const AD<Base> &left, const AD<Base> &right);
 
-	// comparison operators
-	friend bool CppAD::operator < <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend bool CppAD::operator <= <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend bool CppAD::operator > <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend bool CppAD::operator >= <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend bool CppAD::operator == <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	friend bool CppAD::operator != <Base>
-		(const AD<Base> &left, const AD<Base> &right);
-	// ======================================================================
+   // comparison operators
+# if _MSC_VER && !defined(__clang__)
+   template <class Type> friend bool CppAD::operator == <Type>
+      (const AD<Type> &left, const AD<Type> &right);
+   template <class Type> friend bool CppAD::operator != <Type>
+      (const AD<Type> &left, const AD<Type> &right);
+# else
+   friend bool CppAD::operator == <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   friend bool CppAD::operator != <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+# endif
+   friend bool CppAD::operator < <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   friend bool CppAD::operator <= <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   friend bool CppAD::operator > <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   friend bool CppAD::operator >= <Base>
+      (const AD<Base> &left, const AD<Base> &right);
+   // ======================================================================
 
 // --------------------------------------------------------------------------
 private:
-	// ----------------------------------------------------------------------
-	// private data
-	/*!
-	Unique identifier for this tape.  It is always greater than
-	CPPAD_MAX_NUM_THREADS, and different for every tape (even ones that have
-	been deleted). In addition, id_ % CPPAD_MAX_NUM_THREADS is the thread
-	number for this tape. Set by Independent and effectively const
-	*/
-	tape_id_t                    id_;
-	/// Number of independent variables in this tapes reconding.
-	/// Set by Independent and effectively const
-	size_t         size_independent_;
-	/// This is where the information is recorded.
-	local::recorder<Base>              Rec_;
-	// ----------------------------------------------------------------------
-	// private functions
-	//
-	// add a parameter to the tape
-	addr_t RecordParOp(const Base &x);
+   // ----------------------------------------------------------------------
+   // private data
+   /*!
+   Unique identifier for this tape.  It is always greater than
+   CPPAD_MAX_NUM_THREADS, and different for every tape (even ones that have
+   been deleted). In addition, id_ % CPPAD_MAX_NUM_THREADS is the thread
+   number for this tape. Set by Independent and effectively const
+   */
+   tape_id_t                    id_;
+   /// Number of independent variables in this tapes reconding.
+   /// Set by Independent and effectively const
+   size_t         size_independent_;
+   /// This is where the information is recorded.
+   local::recorder<Base>              Rec_;
+   // ----------------------------------------------------------------------
+   // private functions
+   //
+   // add a parameter to the tape
+   addr_t RecordParOp(const AD<Base>& y);
 
-	// see CondExp.h
-	void RecordCondExp(
-		enum CompareOp  cop           ,
-		AD<Base>       &returnValue   ,
-		const AD<Base> &left          ,
-		const AD<Base> &right         ,
-		const AD<Base> &trueCase      ,
-		const AD<Base> &falseCase
-	);
-
-	// place a VecAD object in the tape
-	size_t AddVec(
-		size_t                   length,
-		const pod_vector<Base>&  data
-	);
+   // see CondExp.h
+   void RecordCondExp(
+      enum CompareOp  cop           ,
+      AD<Base>       &returnValue   ,
+      const AD<Base> &left          ,
+      const AD<Base> &right         ,
+      const AD<Base> &trueCase      ,
+      const AD<Base> &falseCase
+   );
 
 public:
-	// default constructor and destructor
-
-	// public function only used by CppAD::Independent
-	template <typename VectorADBase>
-	void Independent(VectorADBase &u);
-	template <typename VectorADBase>
-	void Independent(VectorADBase &u, size_t abort_op_index);
+   // public function only used by CppAD::Independent
+   template <class ADBaseVector>
+   void Independent(
+      ADBaseVector&   x              ,
+      size_t          abort_op_index ,
+      bool            record_compare ,
+      ADBaseVector&   dynamic
+   );
 
 };
 // ---------------------------------------------------------------------------
@@ -141,77 +144,35 @@ public:
 //
 
 /*!
-Place a parameter in the tape.
+Place a parameter in the tape as a variable.
 
 On rare occations it is necessary to place a parameter in the tape; e.g.,
 when it is one of the dependent variabes.
 
-\param z
-value of the parameter that we are placing in the tape.
+\param y
+value of the parameter that we are placing in the tape as a variable.
 
 \return
 variable index (for this recording) correpsonding to the parameter.
 
 \par 2DO
-All these operates are preformed in \c Rec_, so we should
+All these operates are preformed in Rec_, so we should
 move this routine from <tt>ADTape<Base></tt> to <tt>recorder<Base></tt>.
 */
 template <class Base>
-addr_t ADTape<Base>::RecordParOp(const Base &z)
-{	addr_t z_taddr;
-	addr_t ind;
-	CPPAD_ASSERT_UNKNOWN( NumRes(ParOp) == 1 );
-	CPPAD_ASSERT_UNKNOWN( NumArg(ParOp) == 1 );
-	z_taddr = Rec_.PutOp(ParOp);
-	ind     = Rec_.PutPar(z);
-	Rec_.PutArg(ind);
-
-	return z_taddr;
-}
-
-/*!
-Put initialization for a VecAD<Base> object in the tape.
-
-This routine should be called once for each VecAD object when just
-before it changes from a parameter to a variable.
-
-\param length
-size of the <tt>VecAD<Base></tt> object.
-
-\param data
-initial values for the <tt>VecAD<Base></tt> object
-(values before it becomes a variable).
-
-\return
-index of the start of this vector in the list of vector indices.
-The value for this vector index is the length of the vector.
-There are \c length indices following for this vector.
-The values for these vector indices are the corresponding
-parameter indices in the tape for the initial value of the corresponding
-vec_ad element.
-
-\par 2DO
-All these operates are preformed in \c Rec_, so we should
-move this routine from <tt>ADTape<Base></tt> to <tt>recorder<Base></tt>.
-*/
-template <class Base>
-size_t ADTape<Base>::AddVec(size_t length, const pod_vector<Base>& data)
-{	CPPAD_ASSERT_UNKNOWN( length > 0 );
-	size_t i;
-	size_t value_index;
-
-	// store the length in VecInd
-	size_t start = Rec_.PutVecInd(length);
-
-	// store indices of the values in VecInd
-	for(i = 0; i < length; i++)
-	{
-		value_index = Rec_.PutPar( data[i] );
-		Rec_.PutVecInd( value_index );
-	}
-
-	// return the taddr of the length (where the vector starts)
-	return start;
+addr_t ADTape<Base>::RecordParOp(const AD<Base>& y)
+{  CPPAD_ASSERT_UNKNOWN( NumRes(ParOp) == 1 );
+   CPPAD_ASSERT_UNKNOWN( NumArg(ParOp) == 1 );
+   addr_t z_taddr = Rec_.PutOp(ParOp);
+   if( Dynamic(y) )
+   {  addr_t ind  = y.taddr_;
+      Rec_.PutArg(ind);
+   }
+   else
+   {  addr_t ind  = Rec_.put_con_par(y.value_);
+      Rec_.PutArg(ind);
+   }
+   return z_taddr;
 }
 
 } } // END_CPPAD_LOCAL_NAMESPACE

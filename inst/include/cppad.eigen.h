@@ -9,12 +9,23 @@
 #include <boost/bind.hpp>
 
 #include "generics.h"
+#include <cmath>
 
 
 using CppAD::AD;
 using Eigen::Matrix;
 using Eigen::Dynamic;
 using Eigen::Array;
+
+
+namespace CppAD
+{
+  template<class Scalar>
+  bool isfinite(const AD<Scalar> & x)
+  {
+    return std::isfinite(Value(x));
+  }
+} // namespace CppAD
 
 
 // scalar types

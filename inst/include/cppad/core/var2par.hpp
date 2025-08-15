@@ -1,69 +1,59 @@
 # ifndef CPPAD_CORE_VAR2PAR_HPP
 # define CPPAD_CORE_VAR2PAR_HPP
-
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-17 Bradley M. Bell
-
-CppAD is distributed under multiple licenses. This distribution is under
-the terms of the
-                    GNU General Public License Version 3.
-
-A copy of this license is included in the COPYING file of this distribution.
-Please visit http://www.coin-or.org/CppAD/ for information on other licenses.
--------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-24 Bradley M. Bell
+// ----------------------------------------------------------------------------
 
 /*
 ------------------------------------------------------------------------------
 
-$begin Var2Par$$
-$spell
-	var
-	const
-$$
+{xrst_begin Var2Par}
 
+Convert an AD Variable or Dynamic Parameter to a Constant
+#########################################################
 
-$section Convert an AD Variable to a Parameter$$
-$mindex Var2Par from value_ obtain during taping$$
+Syntax
+******
+| *y* = ``Var2Par`` ( *x* )
 
-$head Syntax$$
-$icode%y% = Var2Par(%x%)%$$
+See Also
+********
+:ref:`value-name`
 
-$head See Also$$
-$cref value$$
-
-
-$head Purpose$$
+Purpose
+*******
 Returns a
-$cref/parameter/glossary/Parameter/$$ $icode y$$
-with the same value as the
-$cref/variable/glossary/Variable/$$ $icode x$$.
+:ref:`constant parameter<glossary@Parameter@Constant>` *y*
+with the same value as *x* .
 
-$head x$$
-The argument $icode x$$ has prototype
-$codei%
-	const AD<%Base%> &x
-%$$
-The argument $icode x$$ may be a variable or parameter.
+x
+*
+The argument *x* has prototype
 
+   ``const AD`` < *Base* > & ``x``
 
-$head y$$
-The result $icode y$$ has prototype
-$codei%
-	AD<%Base%> &y
-%$$
-The return value $icode y$$ will be a parameter.
+The argument *x* may be a
+variable, dynamic parameter, or constant parameter.
 
+y
+*
+The result *y* has prototype
 
-$head Example$$
-$children%
-	example/general/var2par.cpp
-%$$
+   ``AD`` < *Base* > & ``y``
+
+and is a constant parameter.
+
+Example
+*******
+{xrst_toc_hidden
+   example/general/var2par.cpp
+}
 The file
-$cref var2par.cpp$$
+:ref:`var2par.cpp-name`
 contains an example and test of this operation.
-It returns true if it succeeds and false otherwise.
 
-$end
+{xrst_end Var2Par}
 ------------------------------------------------------------------------------
 */
 
@@ -73,16 +63,16 @@ namespace CppAD {
 template <class Base>
 CPPAD_INLINE_FRIEND_TEMPLATE_FUNCTION
 AD<Base> Var2Par(const AD<Base> &x)
-{	AD<Base> y(x.value_);
-	return y;
+{  AD<Base> y(x.value_);
+   return y;
 }
 
 
 template <class Base>
 CPPAD_INLINE_FRIEND_TEMPLATE_FUNCTION
 AD<Base> Var2Par(const VecAD_reference<Base> &x)
-{	AD<Base> y(x.ADBase());
-	y.id_ = 0;
+{  AD<Base> y(x.ADBase());
+   y.id_ = 0;
 }
 
 

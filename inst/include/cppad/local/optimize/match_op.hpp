@@ -1,305 +1,298 @@
 # ifndef CPPAD_LOCAL_OPTIMIZE_MATCH_OP_HPP
 # define CPPAD_LOCAL_OPTIMIZE_MATCH_OP_HPP
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-17 Bradley M. Bell
-
-CppAD is distributed under multiple licenses. This distribution is under
-the terms of the
-                    GNU General Public License Version 3.
-
-A copy of this license is included in the COPYING file of this distribution.
-Please visit http://www.coin-or.org/CppAD/ for information on other licenses.
--------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-24 Bradley M. Bell
+// ----------------------------------------------------------------------------
 # include <cppad/local/optimize/hash_code.hpp>
-/*!
-\file match_op.hpp
-Check if current operator matches a previous operator.
-*/
 // BEGIN_CPPAD_LOCAL_OPTIMIZE_NAMESPACE
 namespace CppAD { namespace local { namespace optimize  {
-/*!
-Search for a previous operator that matches the current one.
+/*
+{xrst_begin optimize_match_op dev}
+{xrst_spell
+   erfc
+}
 
+Search for a Previous Operator that Matches Current Operator
+############################################################
+
+Syntax
+******
+| *exceed_collision_limit* = ``match_op`` (
+| |tab| ``collision_limit`` ,
+| |tab| ``random_itr`` ,
+| |tab| ``op_previous`` ,
+| |tab| ``current`` ,
+| |tab| ``hash_tape_op`` ,
+| |tab| ``work_bool`` ,
+| |tab| ``work_addr_t``
+| )
+
+Prototype
+*********
+{xrst_literal
+   // BEGIN_PROTOTYPE
+   // END_PROTOTYPE
+}
+
+Operator Arguments
+******************
 If an argument for the current operator is a variable,
 and the argument has previous match,
 the previous match for the argument is used when checking for a match
 for the current operator.
 
-\param play
-This is the old operation sequence.
+collision_limit
+***************
+is the maximum number of collisions (matches) allowed for one
+expression hash code value.
 
-\param var2op
-mapping from variable index to operator index.
+random_itr
+**********
+is a random iterator for the old operation sequence.
 
-\param opt_op_info
-Mapping from operator index to operator information.
-The input value of opt_op_info[current].previous is assumed to be zero.
-If a match if found,
-the output value of opt_op_info[current].previous is set to the
-matching operator index, otherwise it is left as is.
-Note that opt_op_info[current].previous < current.
+op_previous
+***********
+Mapping from operator index to previous operator that can replace this one.
+The input value of
 
-\param current
-is the index of the current operator which must be an unary
-or binary operator. Note that NumArg(ErfOp) == 3 but it is effectivey
-a unary operator and is allowed otherwise NumArg( opt_op_info[current].op) < 3.
-It is assumed that hash_table_op is initialized as a vector of emtpy
-sets. After this initialization, the value of current inceases with
-each call to match_op.
+   *previous* = *op_previous* [ *current* ]
 
-\li
-This must be a unary or binary
-operator; hence, NumArg( opt_op_info[current].op ) is one or two.
-There is one exception, NumRes( ErfOp ) == 3, but arg[0]
-is the only true arguments (the others are always the same).
+is assumed to be zero.  If a match if found, the output value of
+*previous* is set to the matching operator index,
+otherwise it is left as is.  Note that *previous* < *current*
+and *op_previous* [ ``previous`` ] is zero.
 
-\li
-This must not be a VecAD load or store operation; i.e.,
-LtpvOp, LtvpOp, LtvvOp, StppOp, StpvOp, StvpOp, StvvOp.
-It also must not be an independent variable operator InvOp.
+current
+*******
+is the index of the current operator which cannot be any of the
+operators in the list below:
+{xrst_literal
+   // BEGIN_INVALID_OP
+   // END_INVALID_OP
+}
+After this initialization, the value of *current*
+increases with each call to match_op.
 
-\param hash_table_op
-is a vector of sets,
-hash_table_op.n_set() == CPPAD_HASH_TABLE_SIZE and
-hash_table_op.end() == opt_op_info.size().
-If i_op is an element of set[j],
-then the operation opt_op_info[i_op] has hash code j,
-and opt_op_info[i_op] does not match any other element of set[j].
-An entry will be added each time match_op is called
-and a match for the current operator is not found.
+erf
+===
+The operators ``ErfOp`` and ``ErfcOp`` have
+three arguments, but only one true argument (the others are always the same).
+
+hash_table_op
+*************
+is assumed to be initialized as a vector of empty sets before the
+first call to match_op (for a pass of the operation sequence).
+
+| |tab| *hash_table_op* . ``n_set`` () == ``CPPAD_HASH_TABLE_SIZE``
+| |tab| *hash_table_op* . ``end`` ()   == *op_previous* . ``size`` ()
+
+If *i_op* is an element of the j-th set,
+then the operation *op_previous* [ *i_op* ] has hash code j,
+and does not match any other element of the j-th set.
+An entry to j-th set for the current operator is added each time
+match_op is called and a match for the current operator is not found.
+
+work_bool
+*********
+work space that is used by match_op between calls to increase speed.
+Should be empty on first call for this forward pass of the operation
+sequence and not modified until forward pass is done
+
+work_addr_t
+***********
+work space that is used by match_op between calls to increase speed.
+Should be empty on first call for this forward pass of the operation
+sequence and not modified until forward pass is done
+
+exceed_collision_limit
+**********************
+If the *collision_limit* is exceeded (is not exceeded),
+the return value is true (false).
+
+{xrst_end optimize_match_op}
 */
-template <class Base>
-void match_op(
-	const player<Base>*            play           ,
-	const vector<addr_t>&          var2op         ,
-	vector<struct_opt_op_info>&    opt_op_info    ,
-	size_t                         current        ,
-	sparse_list&                   hash_table_op  )
-{	//
-	size_t num_op = play->num_op_rec();
-	//
-	CPPAD_ASSERT_UNKNOWN( num_op == opt_op_info.size() );
-	CPPAD_ASSERT_UNKNOWN( opt_op_info[current].previous == 0 );
-	CPPAD_ASSERT_UNKNOWN(
-		hash_table_op.n_set() == CPPAD_HASH_TABLE_SIZE
-	);
-	CPPAD_ASSERT_UNKNOWN( hash_table_op.end() == num_op );
-	CPPAD_ASSERT_UNKNOWN( current < num_op );
-	//
-	// current operator
-	OpCode        op;
-	const addr_t* arg;
-	size_t        i_var;
-	play->get_op_info(current, op, arg, i_var);
-	//
-	// which arguments are variable
-	size_t num_arg = NumArg(op);
-	//
-	bool   variable[2];
-	variable[0] = false;
-	variable[1] = false;
-	switch(op)
-	{	//
-		case ErfOp:
-		num_arg = 1; // other arugments are always the same
-		//
-		case AbsOp:
-		case AcosOp:
-		case AcoshOp:
-		case AsinOp:
-		case AsinhOp:
-		case AtanOp:
-		case AtanhOp:
-		case CosOp:
-		case CoshOp:
-		case ExpOp:
-		case Expm1Op:
-		case LogOp:
-		case Log1pOp:
-		case SignOp:
-		case SinOp:
-		case SinhOp:
-		case SqrtOp:
-		case TanOp:
-		case TanhOp:
-		CPPAD_ASSERT_UNKNOWN( num_arg == 1 );
-		variable[0] = true;
-		break;
+// BEGIN_PROTOTYPE
+template <class Addr>
+bool match_op(
+   size_t                                      collision_limit ,
+   const play::const_random_iterator<Addr>&    random_itr      ,
+   pod_vector<addr_t>&                         op_previous     ,
+   size_t                                      current         ,
+   sparse::list_setvec&                        hash_table_op   ,
+   pod_vector<bool>&                           work_bool       ,
+   pod_vector<addr_t>&                         work_addr_t     )
+// END_PROTOTYPE
+{
+# ifndef NDEBUG
+   switch( random_itr.get_op(current) )
+   {
+      // BEGIN_INVALID_OP
+      case BeginOp:
+      case CExpOp:
+      case CSkipOp:
+      case CSumOp:
+      case EndOp:
+      case InvOp:
+      case LdpOp:
+      case LdvOp:
+      case ParOp:
+      case PriOp:
+      case StppOp:
+      case StpvOp:
+      case StvpOp:
+      case StvvOp:
+      case AFunOp:
+      case FunapOp:
+      case FunavOp:
+      case FunrpOp:
+      case FunrvOp:
+      // END_INVALID_OP
+      CPPAD_ASSERT_UNKNOWN(false);
+      break;
 
+      default:
+      break;
+   }
+# endif
+   // initialize return value
+   bool exceed_collision_limit = false;
+   // num_op
+   size_t num_op = random_itr.num_op();
+   //
+   // num_var
+   size_t num_var = random_itr.num_var();
+   //
+   // variable is a reference to, and better name for, work_bool
+   pod_vector<bool>&  variable(work_bool);
+   //
+   // var2previous_var is a reference to, and better name for, work_addr_t
+   pod_vector<addr_t>&  var2previous_var(work_addr_t);
+   if( var2previous_var.size() == 0 )
+   {  var2previous_var.resize(num_var);
+      for(size_t i = 0; i < num_var; ++i)
+         var2previous_var[i] = addr_t(i);
+   }
+   //
+   CPPAD_ASSERT_UNKNOWN( var2previous_var.size() == num_var );
+   CPPAD_ASSERT_UNKNOWN( num_op == op_previous.size() );
+   CPPAD_ASSERT_UNKNOWN( op_previous[current] == 0 );
+   CPPAD_ASSERT_UNKNOWN(
+      hash_table_op.n_set() == CPPAD_HASH_TABLE_SIZE
+   );
+   CPPAD_ASSERT_UNKNOWN( hash_table_op.end() == num_op );
+   CPPAD_ASSERT_UNKNOWN( current < num_op );
+   //
+   // op, arg, i_var
+   op_code_var   op;
+   const addr_t* arg;
+   size_t        i_var;
+   random_itr.op_info(current, op, arg, i_var);
+   //
+   // num_arg
+   size_t num_arg = NumArg(op);
+   CPPAD_ASSERT_UNKNOWN( 0 < num_arg );
+   CPPAD_ASSERT_UNKNOWN(
+      (num_arg < 3) || ( (num_arg == 3) && (op == ErfOp || op == ErfcOp) )
+   );
+   //
+   arg_is_variable(op, arg, variable);
+   CPPAD_ASSERT_UNKNOWN( variable.size() == num_arg );
+   //
+   // If j-th argument to this operator is a variable, and a previous
+   // variable will be used in its place, use the previous variable for
+   // hash coding and matching.
+   addr_t arg_match[] = {
+      // Invalid value that will not be used. This initialization avoid
+      // a wraning on some compilers
+      std::numeric_limits<addr_t>::max(),
+      std::numeric_limits<addr_t>::max(),
+      std::numeric_limits<addr_t>::max()
+   };
+   if( (op == AddvvOp) || (op == MulvvOp ) )
+   {  // in special case where operator is commutative and operands are variables,
+      // put lower index first so hash code does not depend on operator order
+      CPPAD_ASSERT_UNKNOWN( num_arg == 2 );
+      arg_match[0] = var2previous_var[ arg[0] ];
+      arg_match[1] = var2previous_var[ arg[1] ];
+      if( arg_match[1] < arg_match[0] )
+         std::swap( arg_match[0], arg_match[1] );
+   }
+   else for(size_t j = 0; j < num_arg; ++j)
+   {  arg_match[j] = arg[j];
+      if( variable[j] )
+         arg_match[j] = var2previous_var[ arg[j] ];
+   }
 
-		case AddpvOp:
-		case DisOp:
-		case DivpvOp:
-		case EqpvOp:
-		case LepvOp:
-		case LtpvOp:
-		case MulpvOp:
-		case NepvOp:
-		case PowpvOp:
-		case SubpvOp:
-		case ZmulpvOp:
-		CPPAD_ASSERT_UNKNOWN( num_arg == 2 );
-		variable[1] = true;
-		break;
+   //
+   size_t code = optimize_hash_code(opcode_t(op), num_arg, arg_match);
+   //
+   // iterator for the set with this hash code
+   sparse::list_setvec_const_iterator itr(hash_table_op, code);
+   //
+   // check for a match
+   size_t count = 0;
+   while( *itr != num_op )
+   {  ++count;
+      //
+      // candidate previous for current operator
+      size_t  candidate  = *itr;
+      CPPAD_ASSERT_UNKNOWN( candidate < current );
+      CPPAD_ASSERT_UNKNOWN( op_previous[candidate] == 0 );
+      //
+      op_code_var   op_c;
+      const addr_t* arg_c;
+      size_t        i_var_c;
+      random_itr.op_info(candidate, op_c, arg_c, i_var_c);
+      //
+      // check for a match
+      bool match = op == op_c;
+      size_t j   = 0;
+      while( match & (j < num_arg) )
+      {  if( variable[j] )
+            match &= arg_match[j] == var2previous_var[ arg_c[j] ];
+         else
+            match &= arg_match[j] == arg_c[j];
+         ++j;
+      }
+      if( (! match) && ( (op == AddvvOp) || (op == MulvvOp) ) )
+      {  // communative so check for reverse order match
+         match  = op == op_c;
+         //
+         // 2024-02-14:
+         // If op_c is not AddvvOp or MulvvOp, its arguments may not be
+         // variables and the code below could attempt to access
+         // var2previous_var out of range. See 2024@mm-dd@02-14.
+         if( match )
+         {  match &= arg_match[0] == var2previous_var[ arg_c[1] ];
+            match &= arg_match[1] == var2previous_var[ arg_c[0] ];
+         }
+      }
+      if( match )
+      {  op_previous[current] = static_cast<addr_t>( candidate );
+         if( NumRes(op) > 0 )
+         {  CPPAD_ASSERT_UNKNOWN( i_var_c < i_var );
+            var2previous_var[i_var] = addr_t( i_var_c );
+         }
+         return exceed_collision_limit;
+      }
+      ++itr;
+   }
 
-		case DivvpOp:
-		case LevpOp:
-		case LtvpOp:
-		case PowvpOp:
-		case SubvpOp:
-		case ZmulvpOp:
-		CPPAD_ASSERT_UNKNOWN( num_arg == 2 );
-		variable[0] = true;
-		break;
-
-		case AddvvOp:
-		case DivvvOp:
-		case EqvvOp:
-		case LevvOp:
-		case LtvvOp:
-		case MulvvOp:
-		case NevvOp:
-		case PowvvOp:
-		case SubvvOp:
-		case ZmulvvOp:
-		CPPAD_ASSERT_UNKNOWN( num_arg == 2 );
-		variable[0] = true;
-		variable[1] = true;
-		break;
-
-		default:
-		CPPAD_ASSERT_UNKNOWN(false);
-	}
-	//
-	// If j-th argument to current operator has a previous operator,
-	// this is the j-th argument for previous operator.
-	// Otherwise, it is the j-th argument for the current operator.
-	addr_t arg_match[2];
-	for(size_t j = 0; j < num_arg; ++j)
-	{	arg_match[j] = arg[j];
-		if( variable[j] )
-		{	size_t j_op     = var2op[ arg[j] ];
-			size_t previous = opt_op_info[j_op].previous;
-			if( previous != 0 )
-			{	// a previous match, be the end of the line; i.e.,
-				// it does not have a previous match.
-				CPPAD_ASSERT_UNKNOWN( opt_op_info[previous].previous == 0 );
-				//
-				OpCode        op_p;
-				const addr_t* arg_p;
-				size_t        i_var_p;
-				play->get_op_info(previous, op_p, arg_p, i_var_p);
-				//
-				CPPAD_ASSERT_UNKNOWN( NumRes(op_p) > 0 );
-				arg_match[j] = addr_t( i_var_p );
-			}
-		}
-	}
-	size_t code = optimize_hash_code(op, num_arg, arg_match);
-	//
-	// iterator for the set with this hash code
-	sparse_list_const_iterator itr(hash_table_op, code);
-	//
-	// check for a match
-	size_t count = 0;
-	while( *itr != num_op )
-	{	++count;
-		//
-		// candidate previous for current operator
-		size_t  candidate  = *itr;
-		CPPAD_ASSERT_UNKNOWN( candidate < current );
-		CPPAD_ASSERT_UNKNOWN( opt_op_info[candidate].previous == 0 );
-		//
-		OpCode        op_c;
-		const addr_t* arg_c;
-		size_t        i_var_c;
-		play->get_op_info(candidate, op_c, arg_c, i_var_c);
-		//
-		// check for a match
-		bool match = op == op_c;
-		if( match )
-		{	for(size_t j = 0; j < num_arg; j++)
-			{	if( variable[j] )
-				{	size_t previous =
-						opt_op_info[ var2op[ arg_c[j] ] ].previous;
-					if( previous != 0 )
-					{	// must be end of the line for a previous match
-						CPPAD_ASSERT_UNKNOWN(
-							opt_op_info[previous].previous == 0
-						);
-						//
-						OpCode        op_p;
-						const addr_t* arg_p;
-						size_t        i_var_p;
-						play->get_op_info(previous, op_p, arg_p, i_var_p);
-						//
-						match &= arg_match[j] == addr_t( i_var_p );
-					}
-					else match &= arg_match[j] == arg_c[j];
-				}
-			}
-		}
-		if( match )
-		{	opt_op_info[current].previous = static_cast<addr_t>( candidate );
-			return;
-		}
-		++itr;
-	}
-
-	// special case where operator is commutative
-	if( (op == AddvvOp) | (op == MulvvOp ) )
-	{	CPPAD_ASSERT_UNKNOWN( NumArg(op) == 2 );
-		std::swap( arg_match[0], arg_match[1] );
-		//
-		code      = optimize_hash_code(op, num_arg, arg_match);
-		sparse_list_const_iterator itr_swap(hash_table_op, code);
-		while( *itr_swap != num_op )
-		{
-			size_t candidate  = *itr_swap;
-			CPPAD_ASSERT_UNKNOWN( candidate < current );
-			CPPAD_ASSERT_UNKNOWN( opt_op_info[candidate].previous == 0 );
-			//
-			OpCode        op_c;
-			const addr_t* arg_c;
-			size_t        i_var_c;
-			play->get_op_info(candidate, op_c, arg_c, i_var_c);
-			//
-			bool match = op == op_c;
-			if( match )
-			{	for(size_t j = 0; j < num_arg; j++)
-				{	CPPAD_ASSERT_UNKNOWN( variable[j] )
-					size_t previous =
-						opt_op_info[ var2op[ arg_c[j] ] ].previous;
-					if( previous != 0 )
-					{	CPPAD_ASSERT_UNKNOWN(
-							opt_op_info[previous].previous == 0
-						);
-						//
-						OpCode        op_p;
-						const addr_t* arg_p;
-						size_t        i_var_p;
-						play->get_op_info(previous, op_p, arg_p, i_var_p);
-						//
-						match &= arg_match[j] == addr_t( i_var_p );
-					}
-					else
-						match &= arg_match[j] == arg_c[j];
-				}
-			}
-			if( match )
-			{	opt_op_info[current].previous = static_cast<addr_t>(candidate);
-				return;
-			}
-			++itr_swap;
-		}
-	}
-	CPPAD_ASSERT_UNKNOWN( count < 11 );
-	if( count == 10 )
-	{	// restart the list
-		hash_table_op.clear(code);
-	}
-	// no match was found, add this operator the the set for this hash code
-	hash_table_op.add_element(code, current);
+   // see print (that is commented out) at bottom of get_op_previous.hpp
+   CPPAD_ASSERT_UNKNOWN( count <= collision_limit );
+   if( count == collision_limit )
+   {  // restart the list
+      hash_table_op.clear(code);
+      // limit has been exceeded
+      exceed_collision_limit = true;
+   }
+   // No match was found. Add this operator to the set for this hash code
+   // Not using post_element because we need to iterate for
+   // this code before adding another element for this code.
+   hash_table_op.add_element(code, current);
+   //
+   return exceed_collision_limit;
 }
 
 } } } // END_CPPAD_LOCAL_OPTIMIZE_NAMESPACE

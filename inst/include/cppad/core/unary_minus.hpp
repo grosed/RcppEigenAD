@@ -1,100 +1,123 @@
 # ifndef CPPAD_CORE_UNARY_MINUS_HPP
 # define CPPAD_CORE_UNARY_MINUS_HPP
-
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-17 Bradley M. Bell
-
-CppAD is distributed under multiple licenses. This distribution is under
-the terms of the
-                    GNU General Public License Version 3.
-
-A copy of this license is included in the COPYING file of this distribution.
-Please visit http://www.coin-or.org/CppAD/ for information on other licenses.
--------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-24 Bradley M. Bell
+// ----------------------------------------------------------------------------
 
 /*
-$begin UnaryMinus$$
-$spell
-	Vec
-	const
-	inline
-$$
+{xrst_begin unary_minus}
 
+AD Unary Minus Operator
+#######################
 
-$section AD Unary Minus Operator$$
-$mindex -$$
+Syntax
+******
+| *y* = ``-`` *x*
 
-$head Syntax$$
+Purpose
+*******
+Computes the negative of *x* .
 
-$icode%y% = - %x%$$
-
-
-$head Purpose$$
-Computes the negative of $icode x$$.
-
-$head Base$$
+Base
+****
 The operation in the syntax above must be supported for the case where
-the operand is a $code const$$ $icode Base$$ object.
+the operand is a ``const`` *Base* object.
 
-$head x$$
-The operand $icode x$$ has one of the following prototypes
-$codei%
-	const AD<%Base%>               &%x%
-	const VecAD<%Base%>::reference &%x%
-%$$
+x
+*
+The operand *x* has one of the following prototypes
 
-$head y$$
-The result $icode y$$ has type
-$codei%
-	AD<%Base%> %y%
-%$$
-It is equal to the negative of the operand $icode x$$.
+| |tab| ``const AD`` < *Base* >               & *x*
+| |tab| ``const VecAD`` < *Base* >:: ``reference &`` *x*
 
-$head Operation Sequence$$
-This is an AD of $icode Base$$
-$cref/atomic operation/glossary/Operation/Atomic/$$
+y
+*
+The result *y* has type
+
+   ``AD`` < *Base* > *y*
+
+It is equal to the negative of the operand *x* .
+
+Operation Sequence
+******************
+This is an AD of *Base*
+:ref:`atomic operation<glossary@Operation@Atomic>`
 and hence is part of the current
-AD of $icode Base$$
-$cref/operation sequence/glossary/Operation/Sequence/$$.
+AD of *Base*
+:ref:`operation sequence<glossary@Operation@Sequence>` .
 
-$head Derivative$$
-If $latex f$$ is a
-$cref/Base function/glossary/Base Function/$$,
-$latex \[
-	\D{[ - f(x) ]}{x} = - \D{f(x)}{x}
-\] $$
+Derivative
+**********
+If :math:`f` is a
+:ref:`glossary@Base Function` ,
 
-$head Example$$
-$children%
-	example/general/unary_minus.cpp
-%$$
+.. math::
+
+   \D{[ - f(x) ]}{x} = - \D{f(x)}{x}
+
+Example
+*******
+{xrst_toc_hidden
+   example/general/unary_minus.cpp
+}
 The file
-$cref unary_minus.cpp$$
+:ref:`unary_minus.cpp-name`
 contains an example and test of this operation.
 
-$end
+{xrst_end unary_minus}
 -------------------------------------------------------------------------------
 */
 
 //  BEGIN CppAD namespace
 namespace CppAD {
-
-// Broken g++ compiler inhibits declaring unary minus a member or friend
+//
 template <class Base>
-inline AD<Base> AD<Base>::operator - (void) const
-{	// should make a more efficient version by adding unary minus to
-	// Operator.h (some day)
-	AD<Base> result(0);
+AD<Base> AD<Base>::operator - (void) const
+{
+   // compute the Base part of this AD object
+   AD<Base> result;
+   result.value_ = - value_;
+   CPPAD_ASSERT_UNKNOWN( Parameter(result) );
 
-	result  -= *this;
-
-	return result;
+   // check if there is a recording in progress
+   local::ADTape<Base>* tape = AD<Base>::tape_ptr();
+   if( tape == nullptr )
+      return result;
+   // tape_id cannot match the default value for tape_id; i.e., 0
+   CPPAD_ASSERT_UNKNOWN( tape->id_ > 0 );
+   //
+   if( tape->id_ != tape_id_ )
+      return result;
+   //
+   if( ad_type_ == variable_enum )
+   {  // result is a variable
+      CPPAD_ASSERT_UNKNOWN( local::NumRes(local::NegOp) == 1 );
+      CPPAD_ASSERT_UNKNOWN( local::NumRes(local::NegOp) == 1 );
+      //
+      // put operand address in the tape
+      tape->Rec_.PutArg(taddr_);
+      // put operator in the tape
+      result.taddr_ = tape->Rec_.PutOp(local::NegOp);
+      // make result a variable
+      result.tape_id_ = tape_id_;
+      result.ad_type_ = variable_enum;
+   }
+   else
+   {  CPPAD_ASSERT_UNKNOWN( ad_type_ == dynamic_enum );
+      addr_t arg0 = taddr_;
+      result.taddr_ = tape->Rec_.put_dyn_par(
+         result.value_, local::neg_dyn, arg0
+      );
+      result.tape_id_  = tape_id_;
+      result.ad_type_  = dynamic_enum;
+   }
+   return result;
 }
-
-
+//
 template <class Base>
-inline AD<Base> operator - (const VecAD_reference<Base> &right)
-{	return - right.ADBase(); }
+AD<Base> operator - (const VecAD_reference<Base> &right)
+{  return - right.ADBase(); }
 
 }
 //  END CppAD namespace

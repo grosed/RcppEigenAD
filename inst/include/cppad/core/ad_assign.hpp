@@ -1,63 +1,55 @@
 # ifndef CPPAD_CORE_AD_ASSIGN_HPP
 # define CPPAD_CORE_AD_ASSIGN_HPP
-
-/* --------------------------------------------------------------------------
-CppAD: C++ Algorithmic Differentiation: Copyright (C) 2003-17 Bradley M. Bell
-
-CppAD is distributed under multiple licenses. This distribution is under
-the terms of the
-                    GNU General Public License Version 3.
-
-A copy of this license is included in the COPYING file of this distribution.
-Please visit http://www.coin-or.org/CppAD/ for information on other licenses.
--------------------------------------------------------------------------- */
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
+// SPDX-FileCopyrightText: Bradley M. Bell <bradbell@seanet.com>
+// SPDX-FileContributor: 2003-24 Bradley M. Bell
+// ----------------------------------------------------------------------------
 
 /*
 ------------------------------------------------------------------------------
 
-$begin ad_assign$$
-$spell
-	Vec
-	const
-$$
+{xrst_begin ad_assign}
 
+AD Assignment Operator
+######################
 
-$section AD Assignment Operator$$
-$mindex assign Base VecAD$$
+Syntax
+******
+| *y* = *x*
 
-$head Syntax$$
-$icode%y% = %x%$$
-
-$head Purpose$$
-Assigns the value in $icode x$$ to the object $icode y$$.
+Purpose
+*******
+Assigns the value in *x* to the object *y* .
 In either case,
 
-$head x$$
-The argument $icode x$$ has prototype
-$codei%
-	const %Type% &%x%
-%$$
-where $icode Type$$ is
-$codei%VecAD<%Base%>::reference%$$,
-$codei%AD<%Base%>%$$,
-$icode Base$$,
+x
+*
+The argument *x* has prototype
+
+   ``const`` *Type* & *x*
+
+where *Type* is
+``VecAD`` < *Base* >:: ``reference`` ,
+``AD`` < *Base* > ,
+*Base* ,
 or any type that has an implicit constructor of the form
-$icode%Base%(%x%)%$$.
+*Base* ( *x* ) .
 
-$head y$$
-The target $icode y$$ has prototype
-$codei%
-	AD<%Base%> %y%
-%$$
+y
+*
+The target *y* has prototype
 
-$head Example$$
-$children%
-	example/general/ad_assign.cpp
-%$$
-The file $cref ad_assign.cpp$$ contain examples and tests of these operations.
+   ``AD`` < *Base* > *y*
+
+Example
+*******
+{xrst_toc_hidden
+   example/general/ad_assign.cpp
+}
+The file :ref:`ad_assign.cpp-name` contain examples and tests of these operations.
 It test returns true if it succeeds and false otherwise.
 
-$end
+{xrst_end ad_assign}
 ------------------------------------------------------------------------------
 */
 
@@ -74,12 +66,13 @@ Use default assignment operator
 because they may be optimized better than the code below:
 \code
 template <class Base>
-inline AD<Base>& AD<Base>::operator=(const AD<Base> &right)
-{	value_    = right.value_;
-	tape_id_  = right.tape_id_;
-	taddr_    = right.taddr_;
+AD<Base>& AD<Base>::operator=(const AD<Base> &right)
+{  value_    = right.value_;
+   tape_id_  = right.tape_id_;
+   taddr_    = right.taddr_;
+   ad_type_  = right.ad_type_;
 
-	return *this;
+   return *this;
 }
 \endcode
 */
@@ -96,14 +89,12 @@ The tape identifier will be an invalid tape identifier,
 so this object is initially a parameter.
 */
 template <class Base>
-inline AD<Base>& AD<Base>::operator=(const Base &b)
-{	value_   = b;
-	tape_id_ = 0;
-
-	// check that this is a parameter
-	CPPAD_ASSERT_UNKNOWN( Parameter(*this) );
-
-	return *this;
+AD<Base>& AD<Base>::operator=(const Base &b)
+{  value_   = b;
+   tape_id_ = 0;
+   //
+   CPPAD_ASSERT_UNKNOWN( ! ( Variable(*this) || Dynamic(*this) ) );
+   return *this;
 }
 
 /*!
@@ -113,8 +104,11 @@ Assignment to an ADVec<Base> element drops the vector information.
 Base type for this AD object.
 */
 template <class Base>
-inline AD<Base>& AD<Base>::operator=(const VecAD_reference<Base> &x)
-{	return *this = x.ADBase(); }
+AD<Base>& AD<Base>::operator=(const VecAD_reference<Base> &x)
+{  *this = x.ADBase();
+   CPPAD_ASSERT_UNKNOWN( ! Dynamic(*this) );
+   return *this;
+}
 
 /*!
 Assignment from any other type, converts to Base type, and then uses assignment
@@ -132,8 +126,11 @@ is the object that is being assigned to an AD<Base> object.
 */
 template <class Base>
 template <class T>
-inline AD<Base>& AD<Base>::operator=(const T &t)
-{	return *this = Base(t); }
+AD<Base>& AD<Base>::operator=(const T &t)
+{  *this = Base(t);
+   CPPAD_ASSERT_UNKNOWN( ! ( Variable(*this) || Dynamic(*this) ) );
+   return *this;
+}
 
 
 } // END_CPPAD_NAMESPACE
