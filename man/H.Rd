@@ -81,7 +81,6 @@ with \eqn{{\bf H}_{k}} the Hessian matrix for \eqn{y_{k}} i.e.,
 library(RcppEigenAD)
 # define f as the eigen vectors of its argument x
 # calculated using the Eigen library
-# this is where it breaks
 f<-sourceCppAD('
 ADmat f(const ADmat& X)
 {
