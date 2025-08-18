@@ -1,8 +1,7 @@
-library(RcppEigen)
 
 ignore_unused_imports <- function()
 {
-    RcppEigen::RcppEigenCxxFlags
+    RcppEigen::RcppEigen.package.skeleton
 }
 
 setGeneric("%.%",function(f,g) standardGeneric("%.%"))
