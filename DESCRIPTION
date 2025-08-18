@@ -9,4 +9,5 @@ Description: Compiles 'C++' code using 'Rcpp', 'Eigen' and 'CppAD' to produce fi
 License: GPL (>=2)
 Imports:  Rcpp (>= 0.12.12), methods, functional, memoise, readr, Rdpack
 Depends: Rcpp,RcppEigen, BH
+LinkingTo: Rcpp,RcppEigen,BH
 RdMacros: Rdpack
