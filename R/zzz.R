@@ -1,9 +1,4 @@
 
-ignore_unused_imports <- function()
-{
-    RcppEigen::RcppEigenCxxFlags
-}
-
 .onLoad<-function(libname, pkgname)
 {
 setMethod("%.%",signature(f="function",g="function"),
