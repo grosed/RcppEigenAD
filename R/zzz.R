@@ -1,7 +1,8 @@
 
 .onLoad<-function(libname, pkgname)
 {
-
+library(BH)
+library(RcppEigen)
 setMethod("%.%",signature(f="function",g="function"),
     function(f,g)
     {
