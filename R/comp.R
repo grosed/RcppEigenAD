@@ -1,3 +1,5 @@
+library(RcppEigen)
+
 ignore_unused_imports <- function()
 {
     RcppEigen::RcppEigenCxxFlags
