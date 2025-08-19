@@ -2,9 +2,9 @@ Package: RcppEigenAD
 Type: Package
 Title: Compiles 'C++' Code using 'Rcpp', 'Eigen' and 'CppAD' to Produce First and Second Order Partial Derivatives 
 Version: 1.1.0
-Date: 2025-08-14
-Author: Damon Berridge <d.m.berridge@swansea.ac.uk> [ctb] Robert Crouchley <r.crouchley@lancaster.ac.uk> [ctb] Daniel Grose <dan.grose@lancaster.ac.uk> [aut,cre,ctb] 
-Maintainer: Daniel Grose <dan.grose@lancaster.ac.uk>
+Date: 2025-08-19
+Authors@R: c(person("Daniel","Grose",email="dan.grose@lancaster.ac.uk",role=c("aut","cre")),
+	           person("Robert","Crouchley",email="r.crouchley@lancaster.ac.uk",role=c("aut","ctb")))	
 Description: Compiles 'C++' code using 'Rcpp', 'Eigen' and 'CppAD' to produce first and second order partial derivatives. Also provides an implementation of Faa' di Bruno's formula to combine the partial derivatives of composed functions, (see Hardy, M (2006) <arXiv:math/0601149v1>).
 License: GPL (>=2)
 Imports:  Rcpp (>= 0.12.12), methods, functional, memoise, readr, Rdpack
